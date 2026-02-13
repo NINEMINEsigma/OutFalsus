@@ -1,0 +1,4 @@
+[submodule "Assets/Convention"]
+	path = Assets/Convention
+	url = http://gitea.liubai.site/ninemine/Convention-Unity.git
+	branch = main
