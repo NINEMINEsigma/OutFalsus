@@ -46,7 +46,9 @@ namespace Game
             public float JudgeDuration => Framework.instance.editorConfig.JudgeDuration;
             [Setting] public Vector2 CursorLimit = new(-11, 11);
 
-            [Content, OnlyPlayMode] public float CursorValue { get; private set; } = 0;
+            [Content, OnlyPlayMode, SerializeField] private float cursorValue = 0;
+            public float CursorValue { get => cursorValue; private set => cursorValue = value; }
+            public float CursorValueBuffer = 0.5f;
             [Content, OnlyPlayMode] public bool IsSkyNoteJudgementEnable = false;
             [Content, OnlyPlayMode] public Vector2 SkyNoteValue;
 
@@ -64,9 +66,10 @@ namespace Game
 
             private void Reset()
             {
-                StartPosition = new(transform.position.x, transform.position.y, 100);
-                EndPosition = new(transform.position.x, transform.position.y, 0);
+                StartPosition = new(transform.position.x, transform.position.y, transform.parent.position.z + 100);
+                EndPosition = new(transform.position.x, transform.position.y, transform.parent.position.z);
                 EulerAngles = transform.eulerAngles;
+                MainCamera = Camera.main;
                 ReInit();
             }
 
@@ -99,14 +102,25 @@ namespace Game
                     {
                         cur.DoUpdate(time);
                     }
-                    if (IsSkyNoteJudgementEnable && time + JudgeDuration >= FirstNote.NoteData.baseTime)
+                    if (IsSkyNoteJudgementEnable)
                     {
-                        //var cur = FirstNote;
-                        //FirstNote = cur.NextNote;
-                        //if (cur.NextNote == null)
-                        //    LastNote = null;
-                        //cur.NoteInvoke();
-                        //cur.NoteDisable();
+                        float left = Mathf.Max(FirstNote.Center - FirstNote.Width * 0.5f, 0);
+                        float right = Mathf.Min(FirstNote.Center + FirstNote.Width * 0.5f, 1);
+                        if (CursorValue <= right && CursorValue >= left)
+                        {
+                            FirstNote.NoteInvoke();
+                            CursorValueBuffer = 0.5f;
+                        }
+                        // 缓冲
+                        else if(CursorValue <= right+ CursorValueBuffer && CursorValue >= left- CursorValueBuffer)
+                        {
+                            FirstNote.NoteInvoke();
+                            CursorValueBuffer = Mathf.Max(0, CursorValueBuffer - 0.05f);
+                        }
+                        else
+                        {
+                            FirstNote.NoteMiss();
+                        }
                     }
                 }
                 // Generate Note
@@ -130,7 +144,7 @@ namespace Game
             }
         }
 
-        public partial class SkyNote:IGameBehaviour
+        public partial class SkyNote : IGameBehaviour
         {
             [Serializable]
             public class SkyNoteBodyData
@@ -146,14 +160,17 @@ namespace Game
                 public float baseTime;
                 public List<SkyNoteBodyData> bodyDatas = new();
 
+                public float StartTime => bodyDatas.First().time + baseTime;
+                public float EndTime => bodyDatas.Last().time + baseTime;
+
                 public void SetupSpline(SplineComputer core,
                                         PathGenerator spline,
                                         SkyTrack track)
                 {
-                    core.multithreaded = false;
                     float viewDurationLength = track.StartPosition.z - track.EndPosition.z;
                     float viewDuration = track.Duration;
                     float maxWidth = track.CursorLimit.y - track.CursorLimit.x;
+                    core.gameObject.transform.position = Vector3.zero;
                     core.SetPoints((from data
                                     in bodyDatas
                                     select new SplinePoint(
@@ -165,9 +182,10 @@ namespace Game
                                         )
                                     ).ToArray(),
                                     SplineComputer.Space.World);
+                    core.space = SplineComputer.Space.Local;
                     spline.GetComponent<MeshRenderer>().material = Resources.Load<Material>("DefaultLine");
                     spline.spline = core;
-                    spline.autoUpdate = false;
+                    //spline.autoUpdate = false;
                     spline.Rebuild();
                 }
             }
@@ -176,6 +194,9 @@ namespace Game
             [Content] public SkyNoteData NoteData;
             [Setting] public SkyTrack ParentTrack = null;
             [Content, SerializeField] private bool IsEnable = false;
+            [Content] public float Center { get; private set; } = 0;
+            [Content] public float Width { get; private set; } = 0;
+            [Content] public int BodyIndex { get; private set; } = 0;
 
             [Resources, SerializeField] private SplineComputer splineComputer;
             [Resources, SerializeField] private PathGenerator pathGenerator;
@@ -198,6 +219,7 @@ namespace Game
                 if (IsEnable == false)
                     return;
                 IsEnable = false;
+                ParentTrack.IsSkyNoteJudgementEnable = false;
                 if (NextNote != null)
                 {
                     ParentTrack.FirstNote = NextNote;
@@ -208,35 +230,58 @@ namespace Game
                 }
                 ParentTrack = null;
                 NextNote = null;
+                BodyIndex = 0;
                 gameObject.SetActive(false);
-            }
-
-            private void OnBecameInvisible()
-            {
-                NoteDisable();
             }
 
             public void NoteInvoke()
             {
+                Debug.Log("Note Hold", this);
+            }
 
+            public void NoteMiss()
+            {
+                Debug.Log("Note Miss", this);
             }
 
             public void NoteBegin()
             {
                 transform.position = ParentTrack.StartPosition;
-                //transform.eulerAngles = ParentTrack.EulerAngles;
                 IsEnable = true;
             }
 
             public void DoUpdate(float time)
             {
-                //if (time > Time + ParentTrack.Duration)
-                //{
-                //    NoteDisable();
-                //    return;
-                //}
+                if(NoteData.EndTime < time)
+                {
+                    NoteDisable();
+                    return;
+                }
+                var status = ParentTrack.IsSkyNoteJudgementEnable = NoteData.StartTime <= time;
                 float t = 1 - (NoteData.baseTime - time) / ParentTrack.Duration;
                 transform.position = Vector3.LerpUnclamped(ParentTrack.StartPosition, ParentTrack.EndPosition, t);
+                if (status && BodyIndex < NoteData.bodyDatas.Count)
+                {
+                    if (BodyIndex + 1 < NoteData.bodyDatas.Count)
+                    {
+                        float ct = (time - NoteData.bodyDatas[BodyIndex].time - NoteData.baseTime) / (NoteData.bodyDatas[BodyIndex + 1].time - NoteData.bodyDatas[BodyIndex].time);
+                        Center = Mathf.Lerp(NoteData.bodyDatas[BodyIndex].pos, NoteData.bodyDatas[BodyIndex].pos, ct);
+                        // 通过改变插值速度优化手感
+                        float headWidth = NoteData.bodyDatas[BodyIndex].width, nextWidth = NoteData.bodyDatas[BodyIndex].width;
+                        if (headWidth > nextWidth)
+                        {
+                            Width = Mathf.Lerp(NoteData.bodyDatas[BodyIndex].width, NoteData.bodyDatas[BodyIndex].width, MathExtension.Evaluate(ct, MathExtension.EaseCurveType.InCirc));
+                        }
+                        else
+                        {
+                            Width = Mathf.Lerp(NoteData.bodyDatas[BodyIndex].width, NoteData.bodyDatas[BodyIndex].width, 1 - MathExtension.Evaluate(1 - ct, MathExtension.EaseCurveType.InCirc));
+                        }
+                        if (NoteData.bodyDatas[BodyIndex + 1].time > time)
+                        {
+                            BodyIndex++;
+                        }
+                    }
+                }
             }
         }
     }

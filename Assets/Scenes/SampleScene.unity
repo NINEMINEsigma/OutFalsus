@@ -583,7 +583,7 @@ Camera:
     width: 1
     height: 1
   near clip plane: 0.3
-  far clip plane: 1000
+  far clip plane: 101
   field of view: 60
   orthographic: 0
   orthographic size: 5
@@ -1042,12 +1042,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2830d2d0cfa180e45906e27601c42091, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Behaviour.SkyTrack
-  StartPosition: {x: 0, y: -10.675, z: 100}
-  EndPosition: {x: 0, y: -10.675, z: 0}
+  StartPosition: {x: 0, y: -10.675, z: 110}
+  EndPosition: {x: 0, y: -10.675, z: 10}
   EulerAngles: {x: 270, y: 180, z: 0}
   MainCamera: {fileID: 330585545}
   SkyCursor: {fileID: 2101458959}
   CursorLimit: {x: -11, y: 11}
+  cursorValue: 0
+  CursorValueBuffer: 0.5
   IsSkyNoteJudgementEnable: 0
   SkyNoteValue: {x: 0, y: 0}
   FirstNote: {fileID: 0}

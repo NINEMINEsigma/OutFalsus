@@ -163,7 +163,7 @@ namespace Game
 
             public void NoteInvoke()
             {
-
+                Debug.Log("Note Judge", this);
             }
 
             public void NoteBegin()
