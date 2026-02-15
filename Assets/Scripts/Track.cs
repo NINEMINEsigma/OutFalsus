@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Convention;
+using Convention.WindowsUI;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -55,12 +57,17 @@ namespace Game
             [Setting] public Key[] KeyFlags;
             [Content] public Note FirstNote, LastNote;
 
+            [Resources, SerializeField] public Text KeyText;
+
             private void Start()
             {
                 if (Framework.instance.playerConfig.TrackConfigs.TryGetValue(TrackBindingIndex, out var config))
                 {
                     KeyFlags = config.KeyFlags.ToArray();
                 }
+                if (KeyText == null)
+                    KeyText = GetComponentInChildren<Text>();
+                KeyText.text = KeyFlags[0].ToString();
             }
 
             public void Reset()
@@ -68,6 +75,7 @@ namespace Game
                 StartPosition = new(transform.position.x, transform.position.y, 100);
                 EndPosition = new(transform.position.x, transform.position.y, 0);
                 EulerAngles = transform.eulerAngles;
+                KeyText = GetComponentInChildren<Text>();
                 ReInit();
             }
 
@@ -131,6 +139,7 @@ namespace Game
             [Setting] public Track ParentTrack = null;
             [Setting] public float Time = 0;
             [Content, SerializeField] private bool IsEnable = false;
+            [Content] public bool IsJudged = false;
 
             internal void Setup(float time, Track parentTrack)
             {
@@ -138,11 +147,22 @@ namespace Game
                 ParentTrack = parentTrack;
             }
 
+            public void NoteMiss()
+            {
+                ((NoteStatus)ConventionUtility.GetArchitecture().Get<NoteStatus>()).Light();
+                Framework.Hit(true, ParentTrack.KeyText.transform.position);
+            }
+
             public void NoteDisable()
             {
                 if (IsEnable == false)
                     return;
                 IsEnable = false;
+                // Miss
+                if (IsJudged == false)
+                {
+                    NoteMiss();
+                }
                 if (NextNote != null)
                 {
                     ParentTrack.FirstNote = NextNote;
@@ -163,7 +183,8 @@ namespace Game
 
             public void NoteInvoke()
             {
-                Debug.Log("Note Judge", this);
+                IsJudged = true;
+                Framework.Hit(false, ParentTrack.KeyText.transform.position);
             }
 
             public void NoteBegin()
@@ -171,6 +192,7 @@ namespace Game
                 transform.position = ParentTrack.StartPosition;
                 transform.eulerAngles = ParentTrack.EulerAngles;
                 IsEnable = true;
+                IsJudged = false;
             }
 
             public void DoUpdate(float time)

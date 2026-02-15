@@ -12,9 +12,13 @@ namespace Game
             public Track[] Tracks;
             public SkyTrack SkyTrack;
             public AudioSystem audioSystem;
+            [Resources, SerializeField] private GameObject hitParticlePrefab;
+            [Resources, SerializeField] private GameObject missPartclePrefab;
 
             private void Start()
             {
+                Framework.instance.HitParticlePrefab = hitParticlePrefab;
+                Framework.instance.MissPartclePrefab = missPartclePrefab;
                 Tracks = GameObject.FindObjectsByType<Track>(FindObjectsInactive.Include, FindObjectsSortMode.None);
                 SkyTrack = GameObject.FindAnyObjectByType<SkyTrack>();
                 if (audioSystem == null)
@@ -73,16 +77,6 @@ namespace Game
                         }
                     });
                 }
-            }
-
-            private void Update()
-            {
-                var time = audioSystem.CurrentTime;
-                foreach (var track in Tracks)
-                {
-                    track.DoUpdate(time);
-                }
-                SkyTrack.DoUpdate(time);
             }
         }
     }
