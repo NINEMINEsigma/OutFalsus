@@ -24,21 +24,27 @@ namespace Game
             {
                 public List<Key> KeyFlags;
             }
-            [Content, SerializeField] private Dictionary<int, TrackConfig> m_TrackConfigs = new();
+            private Dictionary<int, TrackConfig> m_TrackConfigs = null;
             public Dictionary<int, TrackConfig> TrackConfigs
             {
                 get
                 {
-                    if (m_TrackConfigs == null)
-                        m_TrackConfigs = new()
-                        {
-                            {1,new TrackConfig() { KeyFlags={ Key.LeftShift} } },
-                            {2,new TrackConfig() { KeyFlags={ Key.A} } },
-                            {3,new TrackConfig() { KeyFlags={ Key.S} } },
-                            {4,new TrackConfig() { KeyFlags={ Key.D} } },
-                            {5,new TrackConfig() { KeyFlags={ Key.F} } },
-                            {6,new TrackConfig() { KeyFlags={ Key.LeftAlt} } }
-                        };
+                    if (m_TrackConfigs == null||true)
+                    {
+                        m_TrackConfigs = new();
+                        m_TrackConfigs.Add(1, new TrackConfig());
+                        m_TrackConfigs[1].KeyFlags = new() { Key.LeftShift };
+                        m_TrackConfigs.Add(2, new TrackConfig());
+                        m_TrackConfigs[2].KeyFlags = new() { Key.A };
+                        m_TrackConfigs.Add(3, new TrackConfig());
+                        m_TrackConfigs[3].KeyFlags = new() { Key.S };
+                        m_TrackConfigs.Add(4, new TrackConfig());
+                        m_TrackConfigs[4].KeyFlags = new() { Key.D };
+                        m_TrackConfigs.Add(5, new TrackConfig());
+                        m_TrackConfigs[5].KeyFlags = new() { Key.F };
+                        m_TrackConfigs.Add(6, new TrackConfig());
+                        m_TrackConfigs[6].KeyFlags = new() { Key.Space };
+                    }
                     return m_TrackConfigs;
                 }
             }
@@ -61,6 +67,7 @@ namespace Game
 
             private void Start()
             {
+                var temp = Framework.instance.playerConfig.TrackConfigs;
                 if (Framework.instance.playerConfig.TrackConfigs.TryGetValue(TrackBindingIndex, out var config))
                 {
                     KeyFlags = config.KeyFlags.ToArray();

@@ -192,8 +192,10 @@ namespace Game
                     core.SetPoints((from data
                                     in bodyDatas
                                     select new SplinePoint(
-                                        new Vector3(data.pos * maxWidth + track.CursorLimit.x, 0, data.time / viewDuration * viewDurationLength),
-                                        new Vector3(data.pos * maxWidth + track.CursorLimit.x, 0, data.time / viewDuration * viewDurationLength),
+                                        new Vector3(data.pos * maxWidth + track.CursorLimit.x, 0,
+                                        data.time / viewDuration * viewDurationLength),
+                                        new Vector3(data.pos * maxWidth + track.CursorLimit.x, 0,
+                                        data.time / viewDuration * viewDurationLength),
                                         Vector3.up,
                                         data.width * maxWidth,
                                         data.color
@@ -202,7 +204,6 @@ namespace Game
                                     SplineComputer.Space.World);
                     core.space = SplineComputer.Space.Local;
                     core.sampleMode = SplineComputer.SampleMode.Uniform;
-                    spline.GetComponent<MeshRenderer>().material = Resources.Load<Material>("DefaultLine");
                     spline.spline = core;
                     //spline.autoUpdate = false;
                     spline.Rebuild();
@@ -222,11 +223,14 @@ namespace Game
 
             [Resources, SerializeField] private SplineComputer splineComputer;
             [Resources, SerializeField] private PathGenerator pathGenerator;
+            [Resources, SerializeField] private MeshRenderer meshRenderer;
 
             private void Awake()
             {
                 splineComputer = this.GetOrAddComponent<SplineComputer>();
                 pathGenerator = this.GetOrAddComponent<PathGenerator>();
+                meshRenderer = this.GetOrAddComponent<MeshRenderer>();
+                meshRenderer.material = Resources.Load<Material>("DefaultLine");
             }
 
             internal void Setup(SkyTrack parentTrack, SkyNoteData noteData)
@@ -258,12 +262,15 @@ namespace Game
             public void NoteInvoke()
             {
                 SkyCursor.instance.Hit(false, Center);
+                pathGenerator.clipFrom = Mathf.Clamp01((cacheTime - NoteData.StartTime) / (NoteData.EndTime - NoteData.StartTime));
+                meshRenderer.material.SetFloat("_ZClipMin", ParentTrack.transform.parent.position.z);
             }
 
             public void NoteMiss()
             {
                 ((SkyNoteStatus)ConventionUtility.GetArchitecture().Get<SkyNoteStatus>()).Light();
                 SkyCursor.instance.Hit(true, Center);
+                meshRenderer.material.SetFloat("_ZClipMin", 0);
             }
 
             public void NoteBegin()
@@ -271,10 +278,14 @@ namespace Game
                 transform.position = ParentTrack.StartPosition;
                 IsEnable = true;
                 BodyIndex = 0;
+                pathGenerator.clipFrom = 0;
             }
+
+            private float cacheTime;
 
             public void DoUpdate(float time)
             {
+                cacheTime = time;
                 if (NoteData.EndTime < time)
                 {
                     NoteDisable();
