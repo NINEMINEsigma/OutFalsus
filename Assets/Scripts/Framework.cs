@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Convention;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Game
 {
@@ -18,7 +19,9 @@ namespace Game
         {
             private void OnApplicationQuit()
             {
+                Cursor.lockState = CursorLockMode.None;
                 Framework.m_instance = null;
+                GameObject.Destroy(this.gameObject);
             }
         }
 
@@ -30,7 +33,7 @@ namespace Game
                 if (Application.isPlaying == false)
                     return null;
                 if (m_instance == null)
-                    m_instance = new GameObject().AddComponent<FrameworkMono>();
+                    m_instance = new GameObject("Framework").AddComponent<FrameworkMono>();
                 return m_instance;
             }
         }

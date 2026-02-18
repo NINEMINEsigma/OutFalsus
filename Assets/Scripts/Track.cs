@@ -74,7 +74,7 @@ namespace Game
                 }
                 if (KeyText == null)
                     KeyText = GetComponentInChildren<Text>();
-                KeyText.text = KeyFlags[0].ToString();
+                KeyText.text = KeyFlags[0].ToString().Replace("Left", "L").Replace("Right", "R");
             }
 
             public void Reset()
@@ -157,7 +157,8 @@ namespace Game
             public void NoteMiss()
             {
                 ((NoteStatus)ConventionUtility.GetArchitecture().Get<NoteStatus>()).Light();
-                Framework.Hit(true, ParentTrack.KeyText.transform.position);
+                if (ParentTrack.KeyText)
+                    Framework.Hit(true, ParentTrack.KeyText.transform.position);
             }
 
             public void NoteDisable()

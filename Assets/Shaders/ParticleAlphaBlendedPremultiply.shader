@@ -6,6 +6,8 @@ Shader "My Legacy Shaders/Particles/Alpha Blended Premultiply"
         _MainTex ("Particle Texture", 2D) = "white" {}
         _InvFade ("Soft Particles Factor", Range(0.01, 3.0)) = 1.0
         _ZClipMin ("Z Clip Min", Float) = -10000
+        _XClipMin ("X Clip Min", Float) = -10000
+        _XClipMax ("X Clip Max", Float) = 10000
     }
 
     Category
@@ -40,6 +42,8 @@ Shader "My Legacy Shaders/Particles/Alpha Blended Premultiply"
                 fixed4 _TintColor;
                 float4 _MainTex_ST;
                 float _ZClipMin;
+                float _XClipMin;
+                float _XClipMax;
 
                 struct appdata_t
                 {
@@ -54,7 +58,7 @@ Shader "My Legacy Shaders/Particles/Alpha Blended Premultiply"
                     float4 vertex : SV_POSITION;
                     fixed4 color : COLOR;
                     float2 texcoord : TEXCOORD0;
-                    float worldPosZ : TEXCOORD3;
+                    float2 worldPosXZ : TEXCOORD3;
                     UNITY_FOG_COORDS(1)
                     #ifdef SOFTPARTICLES_ON
                     float4 projPos : TEXCOORD2;
@@ -68,7 +72,8 @@ Shader "My Legacy Shaders/Particles/Alpha Blended Premultiply"
                     UNITY_SETUP_INSTANCE_ID(v);
                     UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
                     o.vertex = UnityObjectToClipPos(v.vertex);
-                    o.worldPosZ = mul(unity_ObjectToWorld, v.vertex).z;
+                    float3 worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
+                    o.worldPosXZ = worldPos.xz;
                     #ifdef SOFTPARTICLES_ON
                     o.projPos = ComputeScreenPos(o.vertex);
                     COMPUTE_EYEDEPTH(o.projPos.z);
@@ -84,7 +89,9 @@ Shader "My Legacy Shaders/Particles/Alpha Blended Premultiply"
 
                 fixed4 frag(v2f i) : SV_Target
                 {
-                    clip(i.worldPosZ - _ZClipMin);
+                    clip(i.worldPosXZ.x - _XClipMin);
+                    clip(_XClipMax - i.worldPosXZ.x);
+                    clip(i.worldPosXZ.y - _ZClipMin);
                     #ifdef SOFTPARTICLES_ON
                     float sceneZ = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE_PROJ(_CameraDepthTexture, UNITY_PROJ_COORD(i.projPos)));
                     float partZ = i.projPos.z;

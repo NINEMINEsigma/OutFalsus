@@ -55,16 +55,6 @@ namespace Game
 
             [Resources, SerializeField] private Transform NoteInterval;
 
-            private void Start()
-            {
-                Cursor.lockState = CursorLockMode.Locked;
-            }
-
-            private void OnApplicationQuit()
-            {
-                Cursor.lockState = CursorLockMode.None;
-            }
-
             private void Reset()
             {
                 StartPosition = new(transform.position.x, transform.position.y, transform.parent.position.z + 100);
@@ -230,6 +220,7 @@ namespace Game
                 splineComputer = this.GetOrAddComponent<SplineComputer>();
                 pathGenerator = this.GetOrAddComponent<PathGenerator>();
                 meshRenderer = this.GetOrAddComponent<MeshRenderer>();
+                meshRenderer.sortingOrder = 200;
                 meshRenderer.material = Resources.Load<Material>("DefaultLine");
             }
 
@@ -238,6 +229,8 @@ namespace Game
                 ParentTrack = parentTrack;
                 NoteData = noteData;
                 noteData.SetupSpline(splineComputer, pathGenerator, parentTrack);
+                meshRenderer.material.SetFloat("_XClipMin", parentTrack.CursorLimit.x);
+                meshRenderer.material.SetFloat("_XClipMax", parentTrack.CursorLimit.y);
             }
 
             public void NoteDisable()
