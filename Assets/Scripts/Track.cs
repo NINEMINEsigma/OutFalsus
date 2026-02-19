@@ -98,7 +98,7 @@ namespace Game
 
             public void DoUpdate(float time)
             {
-                // Update Notes
+                // ModuleUpdate Notes
                 if (FirstNote != null)
                 {
                     for (var cur = FirstNote; cur != null; cur = cur.NextNote)

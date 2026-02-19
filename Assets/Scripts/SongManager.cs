@@ -7,7 +7,7 @@ using UnityEngine.UI;
 
 namespace Game
 {
-    public class SongManager : MonoBehaviour,IGameModule
+    public class SongManager : MonoSingleton<SongManager>
     {
         [Resources] public AudioSystem AudioSystem;
         [Resources] public List<MonoBehaviour> Updaters = new();

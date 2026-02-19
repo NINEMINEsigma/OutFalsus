@@ -86,7 +86,7 @@ namespace Game
 
             public void DoUpdate(float time)
             {
-                // Update Notes
+                // ModuleUpdate Notes
                 if (FirstNote != null)
                 {
                     FirstNote.DoUpdate(time);

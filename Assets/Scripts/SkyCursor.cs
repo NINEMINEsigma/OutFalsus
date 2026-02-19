@@ -11,17 +11,17 @@ namespace Game
         public class SkyCursor : MonoSingleton<SkyCursor>
         {
 
-            [Resources, SerializeField] private AudioSystem audioSystem;
+            [Resources, SerializeField] private AudioSystem skyHitSoundSource;
 
             private void Start()
             {
-                if (audioSystem == null)
-                    audioSystem = GetComponent<AudioSystem>();
+                if (skyHitSoundSource == null)
+                    skyHitSoundSource = GetComponent<AudioSystem>();
             }
 
             private void Reset()
             {
-                audioSystem = this.GetOrAddComponent<AudioSystem>();
+                skyHitSoundSource = this.GetOrAddComponent<AudioSystem>();
             }
 
             public void Hit(bool isMiss,float pos)
