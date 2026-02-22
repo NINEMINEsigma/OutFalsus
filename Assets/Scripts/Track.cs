@@ -96,14 +96,14 @@ namespace Game
             [Content] public List<float> Timeline = new();
             [Content] public int TimeIndex = 0;
 
-            public void DoUpdate(float time)
+            public void DoUpdate(float time, bool isAudioPlaying, float deltaTime)
             {
                 // ModuleUpdate Notes
                 if (FirstNote != null)
                 {
                     for (var cur = FirstNote; cur != null; cur = cur.NextNote)
                     {
-                        cur.DoUpdate(time);
+                        cur.DoUpdate(time, isAudioPlaying, deltaTime);
                     }
                     foreach (var key in KeyFlags)
                     {
@@ -156,7 +156,7 @@ namespace Game
 
             public void NoteMiss()
             {
-                ((NoteStatus)ConventionUtility.GetArchitecture().Get<NoteStatus>()).Light();
+                NoteStatus.instance.Light();
                 if (ParentTrack.KeyText)
                     Framework.Hit(true, ParentTrack.KeyText.transform.position);
             }
@@ -203,7 +203,7 @@ namespace Game
                 IsJudged = false;
             }
 
-            public void DoUpdate(float time)
+            public void DoUpdate(float time, bool isAudioPlaying, float deltaTime)
             {
                 if (time > Time + ParentTrack.Duration)
                 {

@@ -22,14 +22,16 @@ namespace Game
 #endif
         }
 
+        [Content, SerializeField, OnlyPlayMode] private float cacheTime = 0;
+
         private void Update()
         {
-            if (AudioSystem.IsPlaying() == false)
-                return;
             var time = AudioSystem.CurrentTime;
+            var deltaTime = time - cacheTime;
+            cacheTime = time;
             foreach (var item in gameBehaviours)
             {
-                item.DoUpdate(time);
+                item.DoUpdate(time, AudioSystem.IsPlaying(), deltaTime);
             }
             SongProcess.fillAmount = time / AudioSystem.CurrentClip.length;
         }

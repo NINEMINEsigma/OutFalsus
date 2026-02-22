@@ -1,10 +1,9 @@
 using Convention;
-using Convention.Architecture.PublicType;
 using UnityEngine;
 
 namespace Game.Behaviour
 {
-    public class NoteStatus : MonoBehaviour, IGameModule
+    public class NoteStatus : MonoSingleton<NoteStatus>
     {
         [Resources, HopeNotNull] public CanvasGroup canvasGroup;
         [Content] public float Alpha = 0;
@@ -14,7 +13,6 @@ namespace Game.Behaviour
         {
             if (canvasGroup == null)
                 canvasGroup = this.GetOrAddComponent<CanvasGroup>();
-            ConventionUtility.GetArchitecture().Register(this);
         }
 
         private void Update()

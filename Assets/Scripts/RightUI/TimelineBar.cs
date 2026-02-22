@@ -9,7 +9,7 @@ namespace Game
 {
     namespace UI
     {
-        public class TimelineBar : MonoBehaviour
+        public class TimelineBar : AreaUIModule
         {
             [Resources] public Scrollbar Source;
             private bool IsRegister = false;
@@ -22,25 +22,25 @@ namespace Game
             public void OnPointerEnter(PointerEventData eventData)
             {
                 IsPointerEnter = true;
-                Tooltips.instance.text = "拖动更改当前播放时间, 滚动鼠标中键滚轮更改编辑器轨道可见范围";
             }
 
             public void OnPointerExit(PointerEventData eventData)
             {
                 IsPointerEnter = false;
-                Tooltips.instance.text = "";
             }
 
-            private void Reset()
+            protected override void Reset()
             {
+                AreaInfo = "拖动更改当前播放时间, 滚动鼠标中键滚轮更改编辑器轨道可见范围";
                 Source = GetComponent<Scrollbar>();
             }
 
-            private void Start()
+            protected override void Start()
             {
+                base.Start();
                 var context = this.GetOrAddComponent<BehaviourContextManager>();
-                context.OnPointerEnterEvent = BehaviourContextManager.InitializeContextSingleEvent(context.OnPointerEnterEvent, OnPointerEnter);
-                context.OnPointerExitEvent = BehaviourContextManager.InitializeContextSingleEvent(context.OnPointerExitEvent, OnPointerExit);
+                context.OnPointerEnterEvent = BehaviourContextManager.AddContextSingleEvent(context.OnPointerEnterEvent, OnPointerEnter);
+                context.OnPointerExitEvent = BehaviourContextManager.AddContextSingleEvent(context.OnPointerExitEvent, OnPointerExit);
                 ConventionUtility.CreateSteps()
                     .Until(() => SongManager.instance != null, () =>
                     {

@@ -84,70 +84,80 @@ namespace Game
             [Content] public List<SkyNote.SkyNoteData> NoteDatas = new();
             [Content] public int TimeIndex = 0;
 
-            public void DoUpdate(float time)
+            public void DoUpdate(float time, bool isAudioPlaying, float deltaTime)
             {
                 // ModuleUpdate Notes
                 if (FirstNote != null)
                 {
-                    FirstNote.DoUpdate(time);
+                    FirstNote.DoUpdate(time, isAudioPlaying, deltaTime);
                 }
-                if (FirstNote != null)
-                { 
-                    // 计算可视范围
+                if (isAudioPlaying)
+                {
+                    if (FirstNote != null)
                     {
+                        // 计算可视范围
                         {
-                            var temp = NoteInterval.position;
-                            NoteInterval.position = new(FirstNote.Center, temp.y, temp.z);
+                            {
+                                var temp = NoteInterval.position;
+                                NoteInterval.position = new(FirstNote.Center, temp.y, temp.z);
+                            }
+                            {
+                                var temp = NoteInterval.localScale;
+                                NoteInterval.localScale = new(FirstNote.Width, temp.y, temp.z);
+                            }
                         }
+                        // 判定
+                        if (time > FirstNote.NoteData.StartTime)
                         {
-                            var temp = NoteInterval.localScale;
-                            NoteInterval.localScale = new(FirstNote.Width, temp.y, temp.z);
+                            float left = Mathf.Max(FirstNote.Center - FirstNote.Width * 0.5f, CursorLimit.x);
+                            float right = Mathf.Min(FirstNote.Center + FirstNote.Width * 0.5f, CursorLimit.y);
+                            if (CursorValue <= right && CursorValue >= left)
+                            {
+                                FirstNote.NoteInvoke();
+                                CursorValueBuffer = 0.5f;
+                            }
+                            // 缓冲
+                            else if (CursorValue <= right + CursorValueBuffer && CursorValue >= left - CursorValueBuffer)
+                            {
+                                FirstNote.NoteInvoke();
+                                CursorValueBuffer = Mathf.Max(0, CursorValueBuffer - 0.05f);
+                            }
+                            else
+                            {
+                                FirstNote.NoteMiss();
+                            }
                         }
                     }
-                    // 判定
-                    if (time > FirstNote.NoteData.StartTime)
+                    else
                     {
-                        float left = Mathf.Max(FirstNote.Center - FirstNote.Width * 0.5f, CursorLimit.x);
-                        float right = Mathf.Min(FirstNote.Center + FirstNote.Width * 0.5f, CursorLimit.y);
-                        if (CursorValue <= right && CursorValue >= left)
+                        var temp = NoteInterval.localScale;
+                        NoteInterval.localScale = new(0, temp.y, temp.z);
+                    }
+                }
+                // Generate Note
+                if (isAudioPlaying)
+                {
+                    if (TimeIndex < NoteDatas.Count && time + Duration >= NoteDatas[TimeIndex].baseTime)
+                    {
+                        var note = Framework.GetSkyNote();
+                        note.gameObject.SetActive(true);
+                        note.Setup(this, NoteDatas[TimeIndex]);
+                        note.NoteBegin();
+                        if (LastNote == null)
                         {
-                            FirstNote.NoteInvoke();
-                            CursorValueBuffer = 0.5f;
-                        }
-                        // 缓冲
-                        else if (CursorValue <= right + CursorValueBuffer && CursorValue >= left - CursorValueBuffer)
-                        {
-                            FirstNote.NoteInvoke();
-                            CursorValueBuffer = Mathf.Max(0, CursorValueBuffer - 0.05f);
+                            LastNote = FirstNote = note;
                         }
                         else
                         {
-                            FirstNote.NoteMiss();
+                            LastNote.NextNote = note;
+                            LastNote = note;
                         }
+                        TimeIndex++;
                     }
                 }
                 else
                 {
-                    var temp = NoteInterval.localScale;
-                    NoteInterval.localScale = new(0, temp.y, temp.z);
-                }
-                // Generate Note
-                if (TimeIndex < NoteDatas.Count && time + Duration >= NoteDatas[TimeIndex].baseTime)
-                {
-                    var note = Framework.GetSkyNote();
-                    note.gameObject.SetActive(true);
-                    note.Setup(this, NoteDatas[TimeIndex]);
-                    note.NoteBegin();
-                    if (LastNote == null)
-                    {
-                        LastNote = FirstNote = note;
-                    }
-                    else
-                    {
-                        LastNote.NextNote = note;
-                        LastNote = note;
-                    }
-                    TimeIndex++;
+
                 }
             }
         }
@@ -276,10 +286,10 @@ namespace Game
 
             private float cacheTime;
 
-            public void DoUpdate(float time)
+            public void DoUpdate(float time, bool isAudioPlaying, float deltaTime)
             {
                 cacheTime = time;
-                if (NoteData.EndTime < time)
+                if (NoteData.EndTime < time || isAudioPlaying == false)
                 {
                     NoteDisable();
                     return;

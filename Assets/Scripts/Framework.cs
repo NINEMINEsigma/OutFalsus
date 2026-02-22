@@ -3,14 +3,13 @@ using System.Collections.Generic;
 using Convention;
 using DG.Tweening;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace Game
 {
     public interface IGameBehaviour
     {
         MonoBehaviour mono { get => (MonoBehaviour)this; }
-        void DoUpdate(float time);
+        void DoUpdate(float time, bool isAudioPlaying, float deltaTime);
     }
 
     public static partial class Framework
